@@ -37,6 +37,12 @@
             <div class="category-list">
               {% for category in categories %}
               <div class="category-item">
+                {% if category.user_id is none %}
+                {# 全員共通のカテゴリ（編集・削除不可） #}
+                <div class="category-label-readonly">{{ category.label }}</div>
+                <span class="category-badge">全員共通</span>
+                {% else %}
+                {# ユーザー固有のカテゴリ（編集・削除可能） #}
                 <form method="post" action="{{ url_for('settings') }}" class="category-form">
                   <input type="hidden" name="action" value="update_category" />
                   <input type="hidden" name="category_id" value="{{ category.id }}" />
@@ -61,6 +67,7 @@
                     削除
                   </button>
                 </form>
+                {% endif %}
                 {% endif %}
               </div>
               {% endfor %}

@@ -15,6 +15,10 @@
   <body>
     <main class="home-page">
       <section class="home-card">
+        <div class="user-info">
+          <span class="username">{{ current_user.username }}さん</span>
+          <a class="logout-link" href="{{ url_for('logout') }}">ログアウト</a>
+        </div>
         <h1 class="home-card__title">MONEY POCKET</h1>
         <header class="home-card__header">
           <p class="home-card__subtitle">今の残金</p>

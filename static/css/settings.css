@@ -115,12 +115,31 @@ body {
   border-radius: 16px;
   padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-label-readonly {
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--text);
+  padding: 10px 14px;
+}
+
+.category-badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
 .category-form {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex: 1;
 }
 
 .category-input {
