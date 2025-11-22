@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>お金の記録 | MONEY POCKET</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transaction.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Noto+Sans+JP:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header class="card__header">
+          <p class="card__eyebrow">STEP</p>
+          <h1 class="card__title">お金の記録</h1>
+          <p class="card__desc">今日のおこづかいの動きをメモしよう！</p>
+          <p class="card__balance">今の残金：¥{{ balance }}</p>
+        </header>
+        {% if error_message %}
+        <p class="form-error">{{ error_message }}</p>
+        {% endif %}
+        <form class="transaction-form" method="post" action="{{ url_for('transaction') }}">
+          <label class="form-field">
+            <span>金額 (¥)</span>
+            <input
+              type="number"
+              name="amount"
+              min="1"
+              required
+              placeholder="例：300"
+              value="{{ form_values.amount }}"
+            />
+          </label>
+
+          <label class="form-field">
+            <span>お金の動き</span>
+            <select name="movement" id="movement-select" required>
+              <option value="increase" {{ 'selected' if form_values.movement == 'increase' }}>お金が増えた</option>
+              <option value="decrease" {{ 'selected' if form_values.movement == 'decrease' }}>お金を使った</option>
+            </select>
+          </label>
+
+          <label class="form-field" id="category-field">
+            <span>何に使った？</span>
+            <select name="category">
+              {% for category in categories %}
+              <option value="{{ category.id }}" {{ 'selected' if form_values.category == category.id }}>{{ category.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="form-field optional">
+            <span>メモ (任意)</span>
+            <input
+              type="text"
+              name="memo"
+              placeholder="うれしかったことをメモしよう"
+              value="{{ form_values.memo }}"
+            />
+          </label>
+
+          <button type="submit" class="primary-button">登録する</button>
+          <div class="link-group">
+            <a class="secondary-link" href="{{ url_for('history') }}">履歴を見る</a>
+            <a class="secondary-link" href="{{ url_for('home') }}">ホームにもどる</a>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const movementSelect = document.getElementById('movement-select');
+      const categoryField = document.getElementById('category-field');
+      const categorySelect = categoryField.querySelector('select');
+
+      function toggleCategoryRequirement() {
+        const isDecrease = movementSelect.value === 'decrease';
+        categoryField.dataset.visible = isDecrease;
+        categorySelect.required = isDecrease;
+      }
+
+      movementSelect.addEventListener('change', toggleCategoryRequirement);
+      toggleCategoryRequirement();
+    </script>
+  </body>
+</html>

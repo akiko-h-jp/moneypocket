@@ -1,0 +1,135 @@
+:root {
+  --bg: #c3d9ef;
+  --border: #f8d75c;
+  --card-bg: #f9f1c6;
+  --accent: #1ab6a8;
+  --primary-text: #3f4a5a;
+  --button-bg: #f2c6f6;
+  --button-text: #4c3f76;
+  --shadow: 0 12px 24px rgba(63, 74, 90, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Noto Sans JP', 'Nunito', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.home-page {
+  width: 100%;
+  max-width: 400px;
+  padding: 24px;
+}
+
+.home-card {
+  background: #fff;
+  border-radius: 32px;
+  border: 12px solid var(--border);
+  padding: 32px 24px 42px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  background-image: linear-gradient(180deg, var(--bg) 0%, #b8d3ef 100%);
+}
+
+.home-card__header {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 24px 12px;
+  margin-bottom: 32px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.home-card__title {
+  margin: 0 0 24px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.home-card__subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--primary-text);
+  letter-spacing: 0.05em;
+}
+
+.home-card__amount {
+  margin: 12px 0 0;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+.home-card__amount span {
+  font-variant-numeric: tabular-nums;
+}
+
+.home-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pill-button {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--button-text);
+  background: var(--button-bg);
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: none;
+  box-shadow: 0 6px 16px rgba(76, 63, 118, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pill-button:focus,
+.pill-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(76, 63, 118, 0.25);
+}
+
+.pill-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(76, 63, 118, 0.2);
+}
+
+.settings-link {
+  display: block;
+  margin-top: 20px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 0.9rem;
+  color: var(--primary-text);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.settings-link:hover {
+  opacity: 1;
+}
+
+@media (max-width: 480px) {
+  .home-card {
+    border-width: 10px;
+    padding: 28px 18px 36px;
+  }
+
+  .home-card__amount {
+    font-size: 2.2rem;
+  }
+}

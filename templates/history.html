@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>おこづかい記録 | MONEY POCKET</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Noto+Sans+JP:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <main class="history-page">
+      <section class="history-card">
+        <header class="history-card__header">
+          <h1>お金の使い方をふり返る</h1>
+          <p>月を選んで、使い方をふりかえろう</p>
+        </header>
+
+        <form class="filter" method="get" action="{{ url_for('history') }}">
+          <label>
+            <span>表示する月</span>
+            <input type="month" name="month" value="{{ selected_month }}" required />
+          </label>
+          <button type="submit">表示</button>
+        </form>
+
+        <div class="history-content">
+          <div class="chart-panel">
+            <h2>出金のないよう</h2>
+            <canvas id="spendingChart" aria-label="カテゴリ別円グラフ"></canvas>
+          </div>
+
+          <div class="list-panel">
+            <h2>月のりれき</h2>
+            {% if entries %}
+            <ul class="history-list">
+              {% for entry in entries %}
+              <li>
+                <div class="history-list__text">
+                  <p class="date">{{ entry.display_date }}</p>
+                  <p class="amount {{ 'minus' if entry.movement == 'decrease' else 'plus' }}">
+                    {{ entry.sign }}¥{{ entry.amount }}
+                  </p>
+                  <p class="category">{{ entry.category_label }}</p>
+                  <p class="memo">{{ entry.memo or '（メモなし）' }}</p>
+                </div>
+                <a
+                  href="{{ url_for('edit_transaction', transaction_id=entry.id) }}"
+                  class="edit-button"
+                >
+                  編集する
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-state">まだこの月の記録はありません。</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="back-links">
+          <a class="back-link" href="{{ url_for('transaction') }}">お金の記録</a>
+          <a class="back-link" href="{{ url_for('home') }}">ホームにもどる</a>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const chartData = {{ chart_data | safe }};
+
+      const ctx = document.getElementById('spendingChart');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: chartData.labels,
+          datasets: [
+            {
+              data: chartData.values,
+              backgroundColor: ['#f39c6b', '#f5d547', '#7bdcb5', '#7fa9f6', '#f47bb9'],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: {
+                  family: 'Noto Sans JP',
+                },
+              },
+            },
+          },
+          cutout: '60%',
+        },
+      });
+    </script>
+  </body>
+</html>
