@@ -10,6 +10,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / 'money_pocket.db'
 
+# データベースファイルの親ディレクトリが存在することを確認
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 
 DEFAULT_CATEGORIES = [
     ('food', '食べ物'),
@@ -31,13 +34,27 @@ class Transaction:
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    """データベース接続を取得。確実に永続化されるように設定。"""
+    # データベースファイルの親ディレクトリが存在することを確認
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    # SQLite接続を作成（Flaskアプリではcheck_same_thread=Falseが必要）
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    
+    # WALモードを有効にして、同時アクセスを改善
+    conn.execute('PRAGMA journal_mode=WAL')
+    
+    # 外部キー制約を有効化
+    conn.execute('PRAGMA foreign_keys=ON')
+    
     return conn
 
 
 def init_db() -> None:
-    with get_connection() as conn:
+    """データベースを初期化し、テーブルを作成する。確実に永続化される。"""
+    conn = get_connection()
+    try:
         # ユーザーテーブルの作成
         conn.executescript(
             """
@@ -106,11 +123,19 @@ def init_db() -> None:
                     "INSERT INTO categories (id, user_id, label, display_order) VALUES (?, ?, ?, ?)",
                     (cat_id, None, label, idx),
                 )
+            # 明示的にコミットして永続化を保証
             conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def insert_transaction(*, user_id: int, movement: str, amount: int, category: str | None, memo: str | None) -> None:
-    with get_connection() as conn:
+    """トランザクションを挿入し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         conn.execute(
             """
             INSERT INTO transactions (user_id, occurred_at, movement, amount, category, memo)
@@ -118,7 +143,13 @@ def insert_transaction(*, user_id: int, movement: str, amount: int, category: st
             """,
             (user_id, datetime.now().isoformat(timespec='seconds'), movement, amount, category, memo),
         )
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def fetch_balance(user_id: int) -> int:
@@ -232,7 +263,9 @@ def update_transaction(
     category: str | None,
     memo: str | None,
 ) -> None:
-    with get_connection() as conn:
+    """トランザクションを更新し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         conn.execute(
             """
             UPDATE transactions
@@ -241,11 +274,19 @@ def update_transaction(
             """,
             (movement, amount, category, memo, transaction_id, user_id),
         )
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def delete_transaction(user_id: int, transaction_id: int) -> None:
-    with get_connection() as conn:
+    """トランザクションを削除し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         conn.execute(
             """
             DELETE FROM transactions
@@ -253,7 +294,13 @@ def delete_transaction(user_id: int, transaction_id: int) -> None:
             """,
             (transaction_id, user_id),
         )
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def get_category_label(user_id: int, category_id: str) -> str | None:
@@ -281,7 +328,9 @@ def get_all_categories(user_id: int) -> List[dict[str, str | int | None]]:
 
 
 def add_category(user_id: int, category_id: str, label: str) -> None:
-    with get_connection() as conn:
+    """カテゴリを追加し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         max_order = conn.execute(
             "SELECT COALESCE(MAX(display_order), -1) FROM categories WHERE user_id = ? OR user_id IS NULL",
             (user_id,),
@@ -290,21 +339,37 @@ def add_category(user_id: int, category_id: str, label: str) -> None:
             "INSERT INTO categories (id, user_id, label, display_order) VALUES (?, ?, ?, ?)",
             (category_id, user_id, label, max_order + 1),
         )
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def update_category(user_id: int, category_id: str, new_label: str) -> None:
-    with get_connection() as conn:
+    """カテゴリを更新し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         # 全員共通のカテゴリ（user_id IS NULL）は更新できない
         conn.execute(
             "UPDATE categories SET label = ? WHERE id = ? AND user_id = ?",
             (new_label, category_id, user_id),
         )
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def delete_category(user_id: int, category_id: str) -> None:
-    with get_connection() as conn:
+    """カテゴリを削除し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         # 全員共通のカテゴリ（user_id IS NULL）は削除できない
         # このカテゴリを使用しているトランザクションを「その他」に変更
         conn.execute(
@@ -312,31 +377,52 @@ def delete_category(user_id: int, category_id: str) -> None:
             (user_id, category_id),
         )
         conn.execute("DELETE FROM categories WHERE id = ? AND user_id = ?", (category_id, user_id))
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def reset_all_data(user_id: int) -> None:
-    """特定のユーザーのデータをリセット（トランザクションとユーザー固有のカテゴリ）"""
-    with get_connection() as conn:
+    """特定のユーザーのデータをリセット（トランザクションとユーザー固有のカテゴリ）し、確実に永続化する。"""
+    conn = get_connection()
+    try:
         conn.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM categories WHERE user_id = ?", (user_id,))
+        # 明示的にコミットして永続化を保証
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 # ユーザー認証関連の関数
 def create_user(username: str, password: str) -> int | None:
     """ユーザーを作成し、ユーザーIDを返す。既に存在する場合はNoneを返す。"""
-    with get_connection() as conn:
-        try:
-            password_hash = generate_password_hash(password)
-            cursor = conn.execute(
-                "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-                (username, password_hash, datetime.now().isoformat(timespec='seconds')),
-            )
-            conn.commit()
-            return cursor.lastrowid
-        except sqlite3.IntegrityError:
-            return None  # ユーザー名が既に存在する
+    conn = get_connection()
+    try:
+        password_hash = generate_password_hash(password)
+        cursor = conn.execute(
+            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
+            (username, password_hash, datetime.now().isoformat(timespec='seconds')),
+        )
+        # 明示的にコミットして永続化を保証
+        conn.commit()
+        user_id = cursor.lastrowid
+        return user_id
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        return None  # ユーザー名が既に存在する
+    except Exception:
+        conn.rollback()
+        raise  # その他のエラーは再発生
+    finally:
+        conn.close()
 
 
 def get_user_by_username(username: str) -> dict | None:
